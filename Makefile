@@ -9,7 +9,7 @@ PORT := $(PORT)
 .PHONY: main GET /login /logout
 
 docker: docker_build
-	docker run -p 9004:9004 --env-file .env 9ziggy9.db
+	docker run -p $(PORT):$(PORT) --env-file .env 9ziggy9.db
 
 docker_build:
 	docker build --no-cache -t 9ziggy9.db .

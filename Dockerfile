@@ -17,6 +17,7 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 
 COPY --from=builder /app/main .
+COPY .env .env
 
 RUN chmod +x /root/main
 
