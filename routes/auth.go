@@ -6,11 +6,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+	"github.com/dgrijalva/jwt-go"
 
 	"github.com/9ziggy9/9ziggy9.db/schema"
-
-	// srv "github.com/9ziggy9/9ziggy9.db/server"
-	"github.com/dgrijalva/jwt-go"
 )
 
 // RANDOMIZE

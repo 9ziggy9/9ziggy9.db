@@ -9,10 +9,11 @@ import (
 	"database/sql"
 	"net"
 	"net/http"
-	"github.com/9ziggy9/9ziggy9.db/schema"
-	"github.com/9ziggy9/9ziggy9.db/routes"
-	srv "github.com/9ziggy9/9ziggy9.db/server"
 	_ "github.com/lib/pq"
+
+	srv "github.com/9ziggy9/9ziggy9.db/server"
+			"github.com/9ziggy9/9ziggy9.db/schema"
+			"github.com/9ziggy9/9ziggy9.db/routes"
 )
 
 func LoadEnv(filename string) error {
