@@ -7,5 +7,5 @@ PORT := $(PORT)
 
 .PHONY: main
 
-main: servelog.go main.go
-	@go run servelog.go main.go
+main: main.go
+	@go run main.go
