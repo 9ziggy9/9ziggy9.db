@@ -29,14 +29,14 @@ const (
 	RoleKey contextKey = "role"
 )
 
-func JwtMiddleware(next http.Handler) http.Handler {
+func JwtMiddleware(next http.Handler, unprotected []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// BEGIN: unprotected routes
-		if r.URL.Path == "/login" {
-			next.ServeHTTP(w, r)
-			return;
+		for _, path := range unprotected {
+			if r.URL.Path == path {
+				next.ServeHTTP(w, r)
+				return;
+			}
 		}
-		// END: unprotected routes
 
 		tkn_cookie, err := r.Cookie("token");
 		if err != nil {
@@ -83,7 +83,7 @@ func Login(db *sql.DB) http.HandlerFunc {
 				Name: user.Name,
 				ID: user.ID,
 				StandardClaims: jwt.StandardClaims{
-					ExpiresAt: time.Now().Add(2 * time.Minute).Unix(),
+					ExpiresAt: time.Now().Add(30 * time.Minute).Unix(),
 				},
 			});
 
@@ -110,5 +110,20 @@ func Login(db *sql.DB) http.HandlerFunc {
 		} else {
 			http.Error(w, "invalid password", http.StatusUnauthorized);
 		}
+	}
+}
+
+func Logout() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.SetCookie(w, &http.Cookie{
+			Name:     "token",
+			Value:    "",
+			Path:     "/",
+			HttpOnly: true,
+			Expires:  time.Unix(0, 0), // set expiration date in the past
+			MaxAge:   -1,              // forces the cookie to expire immediately
+		})
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("logged out successfully"))
 	}
 }

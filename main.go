@@ -44,7 +44,8 @@ func routesMain(db *sql.DB) *http.ServeMux {
 	mux := http.NewServeMux();
 	mux.HandleFunc("GET /users",  routes.GetUsers(db));
 	mux.HandleFunc("POST /users", routes.CreateUser(db));
-	mux.HandleFunc("POST /login",  routes.Login(db));
+	mux.HandleFunc("POST /login", routes.Login(db));
+	mux.HandleFunc("GET /logout", routes.Logout());
 	return mux;
 }
 
@@ -82,7 +83,10 @@ func main() {
 	tcp_in := tcpConnect();
 
 	server := &http.Server{
-		Handler:      routes.JwtMiddleware(routesMain(db)),
+		Handler: routes.JwtMiddleware(
+			routesMain(db),
+			[]string{"/login", "/logout"},
+		),
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: time.Second * 10,
 	}
