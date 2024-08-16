@@ -42,8 +42,9 @@ const ENV_FILE string = "./.env";
 
 func routesMain(db *sql.DB) *http.ServeMux {
 	mux := http.NewServeMux();
-	mux.HandleFunc("GET /users", routes.GetUsers(db));
+	mux.HandleFunc("GET /users",  routes.GetUsers(db));
 	mux.HandleFunc("POST /users", routes.CreateUser(db));
+	mux.HandleFunc("POST /login",  routes.Login(db));
 	return mux;
 }
 
@@ -81,7 +82,7 @@ func main() {
 	tcp_in := tcpConnect();
 
 	server := &http.Server{
-		Handler:      routesMain(db),
+		Handler:      routes.JwtMiddleware(routesMain(db)),
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: time.Second * 10,
 	}

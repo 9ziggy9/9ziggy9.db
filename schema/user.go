@@ -3,6 +3,7 @@ package schema
 import (
 	"database/sql"
 	"golang.org/x/crypto/bcrypt"
+	srv "github.com/9ziggy9/9ziggy9.db/server"
 	cmn "github.com/9ziggy9/9ziggy9.db/common"
 )
 
@@ -30,7 +31,7 @@ func (u *User) Commit(db *sql.DB) cmn.Result[uint64] {
 	return cmn.Ok[uint64](id);
 }
 
-func (u *User) PasswordCompare(pwd string) bool {
+func (u *User) PwdOK(pwd string) bool {
 	err := bcrypt.CompareHashAndPassword(u.Pwd, []byte(pwd));
 	if err != nil { return false; }
 	return true;
@@ -43,4 +44,18 @@ func CreateUser(name string, unsafe_pwd string) cmn.Result[User] {
 	);
 	if err != nil { return cmn.Err[User]("failed to hash password"); }
 	return cmn.Ok[User](User{ Name: name, Pwd: pwd });
+}
+
+func GetUser(db *sql.DB, name string) cmn.Result[User] {
+	var user User;
+	err := db.QueryRow("SELECT * FROM users WHERE name = $1", name).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Pwd,
+	);
+	if err != nil {
+		srv.Log(srv.ERROR, "%s\n", err);
+		return cmn.Err[User]("failed to select user");
+	}
+	return cmn.Ok[User](user);
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func GetUsers(db *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rows, err := db.Query("SELECT id, name, pwd FROM users");
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError);
@@ -36,11 +36,11 @@ func GetUsers(db *sql.DB) http.HandlerFunc {
 		if err := json.NewEncoder(w).Encode(users); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError);
 		}
-	}
+	});
 };
 
 func CreateUser(db *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var user_from schema.User;
 		if err := json.NewDecoder(r.Body).Decode(&user_from); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError);
@@ -58,5 +58,5 @@ func CreateUser(db *sql.DB) http.HandlerFunc {
 		if err := json.NewEncoder(w).Encode(commit_res.Data); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError);
 		}
-	}
+	});
 };
