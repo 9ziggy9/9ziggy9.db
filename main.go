@@ -91,10 +91,9 @@ func main() {
 	tcp_in := tcpConnect();
 
 	server := &http.Server{
-		Handler: routes.JwtMiddleware(
-			routesMain(db),
-			[]string{"/login", "/logout"},
-		),
+		Handler: routes.CorsMiddleware(routes.JwtMiddleware(
+			routesMain(db), []string{"/login", "/logout"},
+		)),
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: time.Second * 10,
 	}

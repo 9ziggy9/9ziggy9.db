@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+
 	"github.com/dgrijalva/jwt-go"
 
 	"github.com/9ziggy9/9ziggy9.db/schema"
+	srv "github.com/9ziggy9/9ziggy9.db/server"
 )
 
 // RANDOMIZE
@@ -27,6 +29,30 @@ const (
 	RoleKey contextKey = "role"
 )
 
+func CorsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+		if origin == "http://localhost:9002" || origin == "http://127.0.0.1:9002" {
+			w.Header().Set("Access-Control-Allow-Origin", origin);
+			w.Header().Set(
+				"Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS",
+			);
+			w.Header().Set(
+				"Access-Control-Allow-Headers", "Content-Type, Authorization",
+			);
+			w.Header().Set("Access-Control-Allow-Credentials", "true");
+			if r.Method == http.MethodOptions {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+		} else {
+			http.Error(w, "forbidden origin", http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func JwtMiddleware(next http.Handler, unprotected []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for _, path := range unprotected {
@@ -38,6 +64,7 @@ func JwtMiddleware(next http.Handler, unprotected []string) http.Handler {
 
 		tkn_cookie, err := r.Cookie("token");
 		if err != nil {
+			srv.Log(srv.ERROR, "missing jwt in request");
 			http.Error(w, "missing token", http.StatusUnauthorized);
 			return;
 		}
@@ -52,6 +79,7 @@ func JwtMiddleware(next http.Handler, unprotected []string) http.Handler {
 		);
 
 		if err != nil || !tkn.Valid {
+			srv.Log(srv.ERROR, "invalid jwt in request");
 			http.Error(w, "invalid token", http.StatusUnauthorized);
 			return;
 		}
@@ -68,6 +96,8 @@ func Login(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := r.FormValue("name");
 		pwd  := r.FormValue("pwd");
+
+		srv.Log(srv.INFO, "requested %s %s\n", name, pwd);
 
 		maybe_user := schema.GetUser(db, name);
 		if maybe_user.Err != nil {
