@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -96,12 +97,44 @@ func Login(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := r.FormValue("name");
 		pwd  := r.FormValue("pwd");
+		reg  := r.FormValue("reg");
 
-		srv.Log(srv.INFO, "requested %s %s\n", name, pwd);
+		isRegistering := false;
+		if reg != "" {
+			var err error;
+			isRegistering, err = strconv.ParseBool(reg)
+			if err != nil {
+				http.Error(w, "boolean value error", http.StatusInternalServerError);
+				srv.Log(srv.ERROR, "invalid bool value: %v\n", err);
+				return;
+			}
+			if isRegistering == true {
+				maybe_already_user := schema.GetUser(db, name);
+				if maybe_already_user.Err == nil {
+					http.Error(w, "user already exists", http.StatusUnauthorized);
+					srv.Log(srv.ERROR, "user already exists " + name);
+					return;
+				}
+				maybe_user := schema.CreateUser(name, pwd);
+				if maybe_user.Err != nil {
+					http.Error(w, maybe_user.Err.Error(), http.StatusInternalServerError);
+					srv.Log(srv.ERROR, "failed to create user " + name);
+					return;
+				}
+				maybe_data := maybe_user.Data.Commit(db);
+				if maybe_data.Err != nil {
+					http.Error(w, maybe_user.Err.Error(), http.StatusInternalServerError);
+					srv.Log(srv.ERROR, "failed to commit user " + name);
+					return;
+				}
+				srv.Log(srv.SUCCESS, "successfully created user " + name);
+			}
+		}
 
 		maybe_user := schema.GetUser(db, name);
 		if maybe_user.Err != nil {
 			http.Error(w, maybe_user.Err.Error(), http.StatusInternalServerError);
+			srv.Log(srv.ERROR, "failed to find user " + name);
 			return;
 		}
 
@@ -135,6 +168,7 @@ func Login(db *sql.DB) http.HandlerFunc {
 				http.Error(w, err.Error(), http.StatusInternalServerError);
 				return;
 			}
+			srv.Log(srv.SUCCESS, "user " + user.Name + " logged in");
 		} else {
 			http.Error(w, "invalid password", http.StatusUnauthorized);
 		}

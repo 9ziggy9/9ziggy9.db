@@ -43,10 +43,11 @@ const ENV_FILE string = "./.env";
 
 func routesMain(db *sql.DB) *http.ServeMux {
 	mux := http.NewServeMux();
-	mux.HandleFunc("GET /users",  routes.GetUsers(db));
-	mux.HandleFunc("POST /users", routes.CreateUser(db));
-	mux.HandleFunc("POST /login", routes.Login(db));
-	mux.HandleFunc("GET /logout", routes.Logout());
+	mux.HandleFunc("GET /users",     routes.GetUsers(db));
+	mux.HandleFunc("POST /users",    routes.CreateUser(db));
+	mux.HandleFunc("POST /login",    routes.Login(db));
+	mux.HandleFunc("POST /register", routes.Login(db));
+	mux.HandleFunc("GET /logout",    routes.Logout());
 	return mux;
 }
 
@@ -66,8 +67,6 @@ func init() {
 }
 
 func main() {
-	// db_conn_str := fmt.Sprintf("user=%s dbname=%s sslmode=disable",
-	// 	os.Getenv("DB_USER"), os.Getenv("DB_NAME"));
 	db_conn_str := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
     os.Getenv("DB_HOST"),
