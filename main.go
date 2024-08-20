@@ -43,6 +43,7 @@ const ENV_FILE string = "./.env";
 
 func routesMain(db *sql.DB) *http.ServeMux {
 	mux := http.NewServeMux();
+	mux.HandleFunc("GET /status",    routes.Status);
 	mux.HandleFunc("GET /users",     routes.GetUsers(db));
 	mux.HandleFunc("POST /users",    routes.CreateUser(db));
 	mux.HandleFunc("POST /login",    routes.Login(db));
@@ -91,7 +92,7 @@ func main() {
 
 	server := &http.Server{
 		Handler: routes.CorsMiddleware(routes.JwtMiddleware(
-			routesMain(db), []string{"/login", "/logout"},
+			routesMain(db), []string{"/login", "/status", "/logout", "/register"},
 		)),
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: time.Second * 10,

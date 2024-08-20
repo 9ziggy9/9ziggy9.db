@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -93,6 +94,37 @@ func JwtMiddleware(next http.Handler, unprotected []string) http.Handler {
 	});
 }
 
+func Status(w http.ResponseWriter, r *http.Request) {
+    tkn_cookie, err := r.Cookie("token");
+    if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized);
+			srv.Log(srv.ERROR, "couldn't find tkn_cookie");
+			return;
+    }
+
+    tkn_str := tkn_cookie.Value
+    claims := &JwtClaims{}
+    tkn, err := jwt.ParseWithClaims(
+			tkn_str, claims,
+			func(tkn *jwt.Token) (interface{}, error) { return jwtKey, nil },
+    )
+
+    if err != nil || !tkn.Valid {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized);
+			srv.Log(srv.ERROR, "unauthorized access");
+			return;
+    }
+
+    response := map[string]string{
+			"status": "authenticated",
+			"name":   claims.Name,
+			"id":     fmt.Sprintf("%d", claims.ID),
+    }
+    w.Header().Set("Content-Type", "application/json");
+    w.WriteHeader(http.StatusOK);
+    json.NewEncoder(w).Encode(response);
+}
+
 func Login(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		name := r.FormValue("name");
@@ -155,12 +187,12 @@ func Login(db *sql.DB) http.HandlerFunc {
 			}
 
 			http.SetCookie(w, &http.Cookie{
-				Name: "token",
-				HttpOnly: true,
-				Value: tkn_str,
-				Path: "/",
+				Name		 : "token",
+				HttpOnly : true,
+				Value		 : tkn_str,
+				Path		 : "/",
+				SameSite : http.SameSiteLaxMode,
 				// Secure:   true, // Ensures the cookie is sent over HTTPS
-				// SameSite: http.SameSiteStrictMode, // Prevents CSRF attacks
 			})
 
 			w.Header().Set("Content-Type", "application/json");
